@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   BookOpen, 
   GraduationCap, 
@@ -8,7 +9,8 @@ import {
   Settings, 
   Bell,
   Search,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 
 interface NavigationProps {
@@ -17,6 +19,8 @@ interface NavigationProps {
 }
 
 const Navigation = ({ userRole = 'STUDENT', userName = 'Student' }: NavigationProps) => {
+  const { signOut } = useAuth();
+  
   const navItems = [
     { icon: BookOpen, label: "Courses", href: "/courses" },
     { icon: Calendar, label: "Schedule", href: "/schedule" },
@@ -81,6 +85,14 @@ const Navigation = ({ userRole = 'STUDENT', userName = 'Student' }: NavigationPr
               <span className="text-sm text-primary-foreground font-medium">
                 {userName}
               </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={signOut}
+                className="text-primary-foreground hover:bg-white/10 hover:text-red-200 ml-2"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>

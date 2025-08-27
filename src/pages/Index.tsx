@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import Navigation from "@/components/ui/navigation";
 import HeroSection from "@/components/dashboard/hero-section";
 import StatsCard from "@/components/ui/stats-card";
@@ -14,10 +17,32 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  // Mock user data - in real app this would come from authentication
+  const { user, userProfile, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect non-authenticated users to auth page
+    if (!user && !loading) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-punjab-primary via-punjab-secondary to-punjab-accent flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect via useEffect
+  }
+
+  // Get user data from auth context
   const currentUser = {
-    name: "Muhammad Ahmad",
-    role: 'STUDENT' as const,
+    name: userProfile?.full_name || "User",
+    role: (userProfile?.role?.toUpperCase() || 'STUDENT') as 'STUDENT' | 'TEACHER' | 'ADMIN',
     stats: {
       coursesEnrolled: 5,
       upcomingClasses: 3,
