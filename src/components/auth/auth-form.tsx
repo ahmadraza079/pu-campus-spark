@@ -79,7 +79,7 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: `${data.nationalId}@student.lms.edu.pk`,
+        email: `student${data.nationalId}@gmail.com`,
         password: data.nationalId,
       });
 
@@ -110,7 +110,7 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: `${data.nationalId}@student.lms.edu.pk`,
+        email: `student${data.nationalId}@gmail.com`,
         password: data.nationalId,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -151,7 +151,7 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: `${data.teacherId}@teacher.lms.edu.pk`,
+        email: `teacher${data.teacherId}@gmail.com`,
         password: data.password,
       });
 
@@ -182,7 +182,7 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: `${data.teacherId}@teacher.lms.edu.pk`,
+        email: `teacher${data.teacherId}@gmail.com`,
         password: data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -224,14 +224,14 @@ export function AuthForm() {
     try {
       if (data.name === "ADMIN" && data.password === "ADMIN789") {
         const { error } = await supabase.auth.signInWithPassword({
-          email: "admin@lms.edu.pk",
+          email: "admin@gmail.com",
           password: "ADMIN789",
         });
 
         if (error) {
           // Try to create admin account if it doesn't exist
           const { error: signUpError } = await supabase.auth.signUp({
-            email: "admin@lms.edu.pk",
+            email: "admin@gmail.com",
             password: "ADMIN789",
             options: {
               emailRedirectTo: `${window.location.origin}/`,
