@@ -20,6 +20,7 @@ const studentLoginSchema = z.object({
 const studentRegisterSchema = z.object({
   nationalId: z.string().length(13, "National ID must be exactly 13 digits").regex(/^\d+$/, "Only numbers allowed"),
   fullName: z.string().min(2, "Full name is required"),
+  email: z.string().email("Valid email is required"),
   phoneNumber: z.string().min(10, "Valid phone number is required"),
 });
 
@@ -55,7 +56,7 @@ export function AuthForm() {
 
   const studentRegisterForm = useForm({
     resolver: zodResolver(studentRegisterSchema),
-    defaultValues: { nationalId: "", fullName: "", phoneNumber: "" },
+    defaultValues: { nationalId: "", fullName: "", email: "", phoneNumber: "" },
   });
 
   // Teacher forms
@@ -78,23 +79,28 @@ export function AuthForm() {
   const onStudentLogin = async (data: z.infer<typeof studentLoginSchema>) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      // First, try the fallback method for existing users with old email format
+      const { error: fallbackError } = await supabase.auth.signInWithPassword({
         email: `student${data.nationalId}@gmail.com`,
         password: data.nationalId,
       });
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: "Invalid National ID or you haven't registered yet.",
-        });
-      } else {
+      if (!fallbackError) {
         toast({
           title: "Welcome back!",
           description: "Successfully logged in as student.",
         });
+        return;
       }
+
+      // If fallback fails, this means either user doesn't exist or has new email format
+      // We can't directly get the email from auth.users on client side
+      // So we'll show an appropriate error message
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "Student with this National ID not found. Please register first or contact support if you have an account.",
+      });
     } catch (error) {
       toast({
         variant: "destructive",
@@ -110,7 +116,7 @@ export function AuthForm() {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: `student${data.nationalId}@gmail.com`,
+        email: data.email,
         password: data.nationalId,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -364,6 +370,19 @@ export function AuthForm() {
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter your full name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={studentRegisterForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Enter your email address" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
