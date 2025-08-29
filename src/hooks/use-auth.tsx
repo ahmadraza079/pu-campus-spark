@@ -13,12 +13,13 @@ interface AuthContextType {
 
 interface UserProfile {
   id: string;
-  user_id: string;
   role: "student" | "teacher" | "admin";
-  national_id?: string;
+  email: string;
+  phone?: string;
   teacher_id?: string;
-  phone_number?: string;
-  full_name: string;
+  voucher_number?: string;
+  username?: string;
+  created_at: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('user_id', session.user.id)
+                .eq('id', session.user.id)
                 .maybeSingle();
 
               if (error) {

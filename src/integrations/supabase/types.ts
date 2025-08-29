@@ -14,39 +14,194 @@ export type Database = {
   }
   public: {
     Tables: {
-      profiles: {
+      attendance: {
         Row: {
-          created_at: string
-          full_name: string
+          class_date: string
+          course_id: string | null
           id: string
-          national_id: string | null
-          phone_number: string | null
-          role: Database["public"]["Enums"]["user_role"]
-          teacher_id: string | null
-          updated_at: string
-          user_id: string
+          marked_by: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+          student_id: string | null
         }
         Insert: {
-          created_at?: string
-          full_name: string
+          class_date: string
+          course_id?: string | null
           id?: string
-          national_id?: string | null
-          phone_number?: string | null
-          role: Database["public"]["Enums"]["user_role"]
-          teacher_id?: string | null
-          updated_at?: string
-          user_id: string
+          marked_by?: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+          student_id?: string | null
         }
         Update: {
-          created_at?: string
-          full_name?: string
+          class_date?: string
+          course_id?: string | null
           id?: string
-          national_id?: string | null
-          phone_number?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
+          marked_by?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string | null
+          details: Json | null
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          access_code: string
+          code: string | null
+          created_at: string | null
+          id: string
+          name: string
+          teacher_id: string | null
+        }
+        Insert: {
+          access_code: string
+          code?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
           teacher_id?: string | null
-          updated_at?: string
-          user_id?: string
+        }
+        Update: {
+          access_code?: string
+          code?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          teacher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollments: {
+        Row: {
+          course_id: string | null
+          grade: Database["public"]["Enums"]["grade_letter"] | null
+          id: string
+          student_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          grade?: Database["public"]["Enums"]["grade_letter"] | null
+          id?: string
+          student_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          grade?: Database["public"]["Enums"]["grade_letter"] | null
+          id?: string
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["role_type"]
+          teacher_id: string | null
+          username: string | null
+          voucher_number: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          phone?: string | null
+          role: Database["public"]["Enums"]["role_type"]
+          teacher_id?: string | null
+          username?: string | null
+          voucher_number?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["role_type"]
+          teacher_id?: string | null
+          username?: string | null
+          voucher_number?: string | null
         }
         Relationships: []
       }
@@ -55,9 +210,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
+      attendance_status: "Present" | "Absent"
+      grade_letter: "A" | "B" | "C" | "D" | "F"
+      role_type: "student" | "teacher" | "admin"
       user_role: "student" | "teacher" | "admin"
     }
     CompositeTypes: {
@@ -186,6 +347,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attendance_status: ["Present", "Absent"],
+      grade_letter: ["A", "B", "C", "D", "F"],
+      role_type: ["student", "teacher", "admin"],
       user_role: ["student", "teacher", "admin"],
     },
   },
