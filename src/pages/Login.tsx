@@ -31,7 +31,6 @@ const adminLoginSchema = z.object({
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -58,7 +57,7 @@ const Login = () => {
     defaultValues: { username: "", password: "" },
   });
 
-  // Student login with email/password
+  // Student login with email and password
   const onStudentLogin = async (data: z.infer<typeof studentLoginSchema>) => {
     setIsLoading(true);
     try {
