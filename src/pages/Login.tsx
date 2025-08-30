@@ -16,6 +16,7 @@ import { GraduationCap } from "lucide-react";
 // Form schemas
 const studentLoginSchema = z.object({
   email: z.string().email("Valid email is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const teacherLoginSchema = z.object({
@@ -44,7 +45,7 @@ const Login = () => {
   // Form instances
   const studentForm = useForm({
     resolver: zodResolver(studentLoginSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const teacherForm = useForm({
@@ -57,46 +58,27 @@ const Login = () => {
     defaultValues: { username: "", password: "" },
   });
 
-  // Student login with OTP
+  // Student login with email/password
   const onStudentLogin = async (data: z.infer<typeof studentLoginSchema>) => {
     setIsLoading(true);
     try {
-      // Check if student exists
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email, role')
-        .eq('email', data.email)
-        .eq('role', 'student')
-        .maybeSingle();
-
-      if (!profile) {
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: "No student found with this email.",
-        });
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+        password: data.password,
       });
 
       if (error) {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: error.message,
+          description: "Invalid email or password.",
         });
       } else {
-        setOtpSent(true);
         toast({
-          title: "Check your email",
-          description: "We've sent you a magic link to sign in.",
+          title: "Welcome back!",
+          description: "Successfully logged in as student.",
         });
+        navigate("/");
       }
     } catch (error) {
       toast({
@@ -226,49 +208,51 @@ const Login = () => {
 
               {/* Student Login Tab */}
               <TabsContent value="student">
-                {otpSent ? (
-                  <div className="text-center p-6">
-                    <h3 className="text-lg font-semibold mb-2">Check your email</h3>
-                    <p className="text-muted-foreground mb-4">
-                      We've sent you a magic link. Click the link in your email to sign in.
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setOtpSent(false)}
+                <Form {...studentForm}>
+                  <form onSubmit={studentForm.handleSubmit(onStudentLogin)} className="space-y-4">
+                    <FormField
+                      control={studentForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email" 
+                              placeholder="Enter your email"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={studentForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password" 
+                              placeholder="Enter your password"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isLoading}
                     >
-                      Back to login
+                      {isLoading ? "Signing in..." : "Login"}
                     </Button>
-                  </div>
-                ) : (
-                  <Form {...studentForm}>
-                    <form onSubmit={studentForm.handleSubmit(onStudentLogin)} className="space-y-4">
-                      <FormField
-                        control={studentForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="Enter your email"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Sending..." : "Send Magic Link"}
-                      </Button>
-                    </form>
-                  </Form>
-                )}
+                  </form>
+                </Form>
               </TabsContent>
 
               {/* Teacher Login Tab */}

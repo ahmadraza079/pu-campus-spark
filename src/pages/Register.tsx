@@ -16,6 +16,7 @@ import { GraduationCap } from "lucide-react";
 // Form schemas
 const studentRegisterSchema = z.object({
   email: z.string().email("Valid email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().min(10, "Valid phone number is required"),
   voucher_number: z.string().min(1, "Voucher number is required"),
 });
@@ -43,7 +44,7 @@ const Register = () => {
   // Form instances
   const studentForm = useForm({
     resolver: zodResolver(studentRegisterSchema),
-    defaultValues: { email: "", phone: "", voucher_number: "" },
+    defaultValues: { email: "", password: "", phone: "", voucher_number: "" },
   });
 
   const teacherForm = useForm({
@@ -83,7 +84,7 @@ const Register = () => {
 
       const { error } = await supabase.auth.signUp({
         email: data.email,
-        password: data.voucher_number, // Use voucher as password for consistency
+        password: data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
@@ -243,6 +244,23 @@ const Register = () => {
                               <Input 
                                 type="email" 
                                 placeholder="Enter your email"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={studentForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password" 
+                                placeholder="Create a password"
                                 {...field} 
                               />
                             </FormControl>
