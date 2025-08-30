@@ -43,7 +43,7 @@ interface Course {
 const createUserSchema = z.object({
   email: z.string().email("Valid email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(['student', 'teacher']),
+  role: z.enum(['student', 'teacher'] as const),
   phone: z.string().optional(),
   teacher_id: z.string().optional(),
   voucher_number: z.string().optional(),
@@ -473,7 +473,7 @@ const AdminDashboard = () => {
                             </FormItem>
                           )}
                         />
-                        {createUserForm.watch('role') === 'teacher' && (
+                        {createUserForm.watch('role') as string === 'teacher' && (
                           <FormField
                             control={createUserForm.control}
                             name="teacher_id"
@@ -488,7 +488,7 @@ const AdminDashboard = () => {
                             )}
                           />
                         )}
-                        {createUserForm.watch('role') === 'student' && (
+                        {createUserForm.watch('role') as string === 'student' && (
                           <FormField
                             control={createUserForm.control}
                             name="voucher_number"
