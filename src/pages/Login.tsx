@@ -127,34 +127,42 @@ const Login = () => {
   const onAdminLogin = async (data: z.infer<typeof adminLoginSchema>) => {
     setIsLoading(true);
     try {
+      console.log('Admin login attempt with username:', data.username);
+      
       // Find admin profile by username
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('email')
         .eq('username', data.username)
         .eq('role', 'admin')
         .maybeSingle();
 
+      console.log('Profile lookup result:', { profile, profileError });
+
       if (!profile) {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Invalid admin credentials.",
+          description: "Admin user not found. Please check your username.",
         });
         return;
       }
 
+      console.log('Attempting auth with email:', profile.email);
+      
       // Sign in with the mapped email
       const { error } = await supabase.auth.signInWithPassword({
         email: profile.email,
         password: data.password,
       });
 
+      console.log('Auth result:', { error });
+
       if (error) {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Invalid admin credentials.",
+          description: `Authentication error: ${error.message}`,
         });
       } else {
         toast({
@@ -164,6 +172,7 @@ const Login = () => {
         navigate("/");
       }
     } catch (error) {
+      console.error('Admin login error:', error);
       toast({
         variant: "destructive",
         title: "Error",
