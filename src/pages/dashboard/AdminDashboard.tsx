@@ -176,6 +176,7 @@ const AdminDashboard = () => {
           name: data.name,
           code: data.code || null,
           access_code: accessCode,
+          teacher_id: null, // Admin creates courses without assigning teacher initially
         });
 
       if (error) throw error;

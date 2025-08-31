@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { GraduationCap, LogOut, Search, Plus, BookOpen } from "lucide-react";
+import { GraduationCap, LogOut, Search, Plus, BookOpen, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,9 @@ interface Course {
 const createCourseSchema = z.object({
   name: z.string().min(1, "Course name is required"),
   code: z.string().optional(),
+});
+
+const claimCourseSchema = z.object({
   access_code: z.string().min(1, "Access code is required"),
 });
 
@@ -37,10 +40,16 @@ const TeacherDashboard = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
 
   const createCourseForm = useForm({
     resolver: zodResolver(createCourseSchema),
-    defaultValues: { name: "", code: "", access_code: "" },
+    defaultValues: { name: "", code: "" },
+  });
+
+  const claimCourseForm = useForm({
+    resolver: zodResolver(claimCourseSchema),
+    defaultValues: { access_code: "" },
   });
 
   useEffect(() => {
@@ -84,84 +93,89 @@ const TeacherDashboard = () => {
 
   const handleCreateCourse = async (data: z.infer<typeof createCourseSchema>) => {
     try {
-      // First, check if the access code exists and is valid
-      const { data: existingCourse, error: checkError } = await supabase
+      // Generate a unique access code
+      const accessCode = `AC-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      const { error } = await supabase
         .from('courses')
-        .select('id, teacher_id, access_code')
-        .eq('access_code', data.access_code)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (!existingCourse) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Access Code",
-          description: "Invalid or already-claimed access code.",
-        });
-        return;
-      }
-
-      if (existingCourse.teacher_id && existingCourse.teacher_id !== user?.id) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Access Code",
-          description: "Invalid or already-claimed access code.",
-        });
-        return;
-      }
-
-      // If access code is valid, create/claim the course
-      if (existingCourse.teacher_id === null) {
-        // Claim existing course
-        const { error: updateError } = await supabase
-          .from('courses')
-          .update({
-            name: data.name,
-            code: data.code || null,
-            teacher_id: user?.id,
-          })
-          .eq('id', existingCourse.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Update existing course (teacher is modifying their own course)
-        const { error: updateError } = await supabase
-          .from('courses')
-          .update({
-            name: data.name,
-            code: data.code || null,
-          })
-          .eq('id', existingCourse.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Log the action
-      await supabase
-        .from('audit_logs')
         .insert({
-          actor_id: user?.id,
-          action: existingCourse.teacher_id ? 'UPDATE_COURSE' : 'CLAIM_COURSE',
-          entity: 'Course',
-          entity_id: existingCourse.id,
-          details: { name: data.name, code: data.code },
+          name: data.name,
+          code: data.code || null,
+          access_code: accessCode,
+          teacher_id: user?.id,
         });
+
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: existingCourse.teacher_id ? "Course updated successfully." : "Course claimed successfully.",
+        description: `Course created with access code: ${accessCode}`,
       });
 
       setIsCreateDialogOpen(false);
       createCourseForm.reset();
       fetchTeacherCourses();
     } catch (error) {
-      console.error('Error creating/claiming course:', error);
+      console.error('Error creating course:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create/claim course.",
+        description: "Failed to create course.",
+      });
+    }
+  };
+
+  const handleClaimCourse = async (data: z.infer<typeof claimCourseSchema>) => {
+    try {
+      // First, check if the access code exists and is unclaimed
+      const { data: course, error: findError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('access_code', data.access_code)
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      if (!course) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Access Code",
+          description: "The access code you entered does not exist.",
+        });
+        return;
+      }
+
+      if (course.teacher_id) {
+        toast({
+          variant: "destructive",
+          title: "Course Already Claimed",
+          description: "This course has already been claimed by another teacher.",
+        });
+        return;
+      }
+
+      // Claim the course by setting teacher_id
+      const { error: updateError } = await supabase
+        .from('courses')
+        .update({ teacher_id: user?.id })
+        .eq('id', course.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Success",
+        description: `Successfully claimed course: ${course.name}`,
+      });
+
+      setIsClaimDialogOpen(false);
+      claimCourseForm.reset();
+      fetchTeacherCourses();
+    } catch (error) {
+      console.error('Error claiming course:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to claim course.",
       });
     }
   };
@@ -275,72 +289,88 @@ const TeacherDashboard = () => {
             <p className="text-muted-foreground">Manage your courses and students</p>
           </div>
           
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create/Claim Course
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create/Claim Course</DialogTitle>
-              </DialogHeader>
-              <Form {...createCourseForm}>
-                <form onSubmit={createCourseForm.handleSubmit(handleCreateCourse)} className="space-y-4">
-                  <FormField
-                    control={createCourseForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter course name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createCourseForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Code (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., CSC-101" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createCourseForm.control}
-                    name="access_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Access Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter access code provided by admin" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancel
+          <div className="flex space-x-2">
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Course</DialogTitle>
+                </DialogHeader>
+                <Form {...createCourseForm}>
+                  <form onSubmit={createCourseForm.handleSubmit(handleCreateCourse)} className="space-y-4">
+                    <FormField
+                      control={createCourseForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Course Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter course name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createCourseForm.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Course Code (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., CSC-101" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full">
+                      Create Course
                     </Button>
-                    <Button type="submit">Create/Claim Course</Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isClaimDialogOpen} onOpenChange={setIsClaimDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Key className="h-4 w-4 mr-2" />
+                  Claim Course
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Claim Course with Access Code</DialogTitle>
+                </DialogHeader>
+                <Form {...claimCourseForm}>
+                  <form onSubmit={claimCourseForm.handleSubmit(handleClaimCourse)} className="space-y-4">
+                    <FormField
+                      control={claimCourseForm.control}
+                      name="access_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Access Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter access code (e.g., AC-1234567890-ABCD)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full">
+                      Claim Course
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats Card */}
@@ -366,7 +396,7 @@ const TeacherDashboard = () => {
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">No courses yet.</p>
                 <p className="text-sm text-muted-foreground">
-                  Create or claim a course using the access code provided by the admin.
+                  Create a new course or claim an existing one using an access code from the admin.
                 </p>
               </div>
             ) : (
@@ -375,6 +405,7 @@ const TeacherDashboard = () => {
                   <TableRow>
                     <TableHead>Course Name</TableHead>
                     <TableHead>Code</TableHead>
+                    <TableHead>Access Code</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -384,6 +415,9 @@ const TeacherDashboard = () => {
                     <TableRow key={course.id}>
                       <TableCell className="font-medium">{course.name}</TableCell>
                       <TableCell>{course.code || 'N/A'}</TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{course.access_code}</code>
+                      </TableCell>
                       <TableCell>
                         {new Date(course.created_at).toLocaleDateString()}
                       </TableCell>
