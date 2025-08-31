@@ -28,6 +28,13 @@ const teacherRegisterSchema = z.object({
   teacher_id: z.string().min(1, "Teacher ID is required"),
 });
 
+const adminRegisterSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  phone: z.string().min(10, "Valid phone number is required"),
+  username: z.string().min(1, "Username is required"),
+});
+
 const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
@@ -50,6 +57,11 @@ const Register = () => {
   const teacherForm = useForm({
     resolver: zodResolver(teacherRegisterSchema),
     defaultValues: { email: "", password: "", phone: "", teacher_id: "" },
+  });
+
+  const adminForm = useForm({
+    resolver: zodResolver(adminRegisterSchema),
+    defaultValues: { email: "", password: "", phone: "", username: "" },
   });
 
   // Student registration
@@ -186,6 +198,73 @@ const Register = () => {
     }
   };
 
+  // Admin registration
+  const onAdminRegister = async (data: z.infer<typeof adminRegisterSchema>) => {
+    setIsLoading(true);
+    try {
+      // Check if email or username already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('email, username')
+        .or(`email.eq.${data.email},username.eq.${data.username}`)
+        .maybeSingle();
+
+      if (existingProfile) {
+        if (existingProfile.email === data.email) {
+          toast({
+            variant: "destructive",
+            title: "Registration failed",
+            description: "Email already registered.",
+          });
+          return;
+        }
+        if (existingProfile.username === data.username) {
+          toast({
+            variant: "destructive",
+            title: "Registration failed",
+            description: "Username already taken.",
+          });
+          return;
+        }
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            role: 'admin',
+            phone: data.phone,
+            username: data.username,
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: error.message,
+        });
+      } else {
+        setRegistrationSuccess(true);
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to verify your account.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -225,9 +304,10 @@ const Register = () => {
               </div>
             ) : (
               <Tabs defaultValue="student" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="student">Student</TabsTrigger>
                   <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                  <TabsTrigger value="admin">Admin</TabsTrigger>
                 </TabsList>
 
                 {/* Student Registration Tab */}
@@ -374,6 +454,87 @@ const Register = () => {
                             <FormControl>
                               <Input 
                                 placeholder="Enter your teacher ID"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Creating account..." : "Register"}
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+
+                {/* Admin Registration Tab */}
+                <TabsContent value="admin">
+                  <Form {...adminForm}>
+                    <form onSubmit={adminForm.handleSubmit(onAdminRegister)} className="space-y-4">
+                      <FormField
+                        control={adminForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="email" 
+                                placeholder="Enter your email"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={adminForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password" 
+                                placeholder="Create a password"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={adminForm.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your phone number"
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={adminForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Username</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your username"
                                 {...field} 
                               />
                             </FormControl>
