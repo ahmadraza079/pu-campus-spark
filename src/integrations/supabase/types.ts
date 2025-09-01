@@ -101,9 +101,89 @@ export type Database = {
           },
         ]
       }
+      course_claims: {
+        Row: {
+          access_code: string
+          claimed_at: string | null
+          course_id: string
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          access_code: string
+          claimed_at?: string | null
+          course_id: string
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          access_code?: string
+          claimed_at?: string | null
+          course_id?: string
+          id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_claims_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_materials: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          description: string | null
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          title: string
+          updated_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          file_size?: number | null
+          file_type: string
+          file_url: string
+          id?: string
+          title: string
+          updated_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_materials_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           access_code: string
+          claimed_by: string | null
           code: string | null
           created_at: string | null
           id: string
@@ -112,6 +192,7 @@ export type Database = {
         }
         Insert: {
           access_code: string
+          claimed_by?: string | null
           code?: string | null
           created_at?: string | null
           id?: string
@@ -120,6 +201,7 @@ export type Database = {
         }
         Update: {
           access_code?: string
+          claimed_by?: string | null
           code?: string | null
           created_at?: string | null
           id?: string

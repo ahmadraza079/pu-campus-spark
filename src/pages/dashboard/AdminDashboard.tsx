@@ -52,6 +52,7 @@ const createUserSchema = z.object({
 const createCourseSchema = z.object({
   name: z.string().min(1, "Course name is required"),
   code: z.string().optional(),
+  access_code: z.string().min(1, "Access code is required"),
 });
 
 const AdminDashboard = () => {
@@ -72,7 +73,7 @@ const AdminDashboard = () => {
 
   const createCourseForm = useForm({
     resolver: zodResolver(createCourseSchema),
-    defaultValues: { name: "", code: "" },
+    defaultValues: { name: "", code: "", access_code: "" },
   });
 
   useEffect(() => {
@@ -167,15 +168,12 @@ const AdminDashboard = () => {
 
   const handleCreateCourse = async (data: z.infer<typeof createCourseSchema>) => {
     try {
-      // Generate a unique access code
-      const accessCode = `AC-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-
       const { error } = await supabase
         .from('courses')
         .insert({
           name: data.name,
           code: data.code || null,
-          access_code: accessCode,
+          access_code: data.access_code,
           teacher_id: null, // Admin creates courses without assigning teacher initially
         });
 
@@ -188,12 +186,12 @@ const AdminDashboard = () => {
           actor_id: user?.id,
           action: 'CREATE_COURSE',
           entity: 'Course',
-          details: { name: data.name, code: data.code, access_code: accessCode },
+          details: { name: data.name, code: data.code, access_code: data.access_code },
         });
 
       toast({
         title: "Success",
-        description: `Course created with access code: ${accessCode}`,
+        description: `Course created with access code: ${data.access_code}`,
       });
 
       setIsCreateCourseDialogOpen(false);
@@ -592,6 +590,19 @@ const AdminDashboard = () => {
                               <FormLabel>Course Code (Optional)</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g., CSC-101" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={createCourseForm.control}
+                          name="access_code"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Access Code</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., SDC2024-001" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
