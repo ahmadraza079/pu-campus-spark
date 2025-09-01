@@ -172,12 +172,15 @@ const AdminDashboard = () => {
         .from('courses')
         .insert({
           name: data.name,
-          code: data.code || null,
-          access_code: data.access_code,
+          code: data.code?.trim() || null, // Ensure empty strings become null
+          access_code: data.access_code.trim(),
           teacher_id: null, // Admin creates courses without assigning teacher initially
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       // Log the action
       await supabase
@@ -199,10 +202,22 @@ const AdminDashboard = () => {
       fetchAdminData();
     } catch (error) {
       console.error('Error creating course:', error);
+      
+      let errorMessage = "Failed to create course.";
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === '23505') {
+          if (error.message?.includes('access_code')) {
+            errorMessage = "This access code is already in use. Please choose a different one.";
+          } else if (error.message?.includes('code')) {
+            errorMessage = "This course code is already in use. Please choose a different one.";
+          }
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create course.",
+        description: errorMessage,
       });
     }
   };
