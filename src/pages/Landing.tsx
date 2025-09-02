@@ -48,13 +48,13 @@ const Landing = () => {
               <Button
                 variant="outline"
                 onClick={() => navigate("/login")}
-                className="border-white/30 text-white hover:bg-white/10"
+                className="border-secondary/50 text-secondary hover:bg-secondary/10 hover:border-secondary"
               >
                 Login
               </Button>
               <Button
                 onClick={() => navigate("/register")}
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
               >
                 Register
               </Button>
@@ -77,7 +77,7 @@ const Landing = () => {
             <Button
               size="lg"
               onClick={() => navigate("/register")}
-              className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-4"
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 text-lg px-8 py-4"
             >
               Get Started Today
             </Button>
@@ -85,7 +85,7 @@ const Landing = () => {
               size="lg"
               variant="outline"
               onClick={() => navigate("/login")}
-              className="border-white/30 text-white hover:bg-white/10 text-lg px-8 py-4"
+              className="border-secondary/50 text-secondary hover:bg-secondary/10 hover:border-secondary text-lg px-8 py-4"
             >
               Sign In
             </Button>

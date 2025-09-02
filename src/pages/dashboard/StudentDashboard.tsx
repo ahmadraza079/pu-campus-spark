@@ -208,7 +208,7 @@ const StudentDashboard = () => {
                 variant="outline"
                 size="sm"
                 onClick={signOut}
-                className="border-white/30 text-white hover:bg-white/10"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
