@@ -14,9 +14,9 @@ interface Course {
   id: string;
   name: string;
   code: string;
-  teacher: {
+  claimed_teacher?: {
     email: string;
-  };
+  }[];
 }
 
 interface Enrollment {
@@ -74,7 +74,7 @@ const StudentDashboard = () => {
             id,
             name,
             code,
-            teacher:profiles!courses_teacher_id_fkey (
+            claimed_teacher:profiles!courses_claimed_by_fkey (
               email
             )
           )
@@ -287,7 +287,7 @@ const StudentDashboard = () => {
                           {enrollment.course.name}
                         </TableCell>
                         <TableCell>{enrollment.course.code || 'N/A'}</TableCell>
-                        <TableCell>{enrollment.course.teacher?.email}</TableCell>
+                        <TableCell>{enrollment.course.claimed_teacher?.[0]?.email || 'Unassigned'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

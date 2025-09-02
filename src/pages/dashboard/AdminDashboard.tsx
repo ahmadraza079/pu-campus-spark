@@ -34,10 +34,11 @@ interface Course {
   code?: string;
   access_code: string;
   teacher_id?: string;
+  claimed_by?: string;
   created_at: string;
-  teacher?: {
+  claimed_teacher?: {
     email: string;
-  };
+  }[];
 }
 
 const createUserSchema = z.object({
@@ -109,7 +110,7 @@ const AdminDashboard = () => {
         .from('courses')
         .select(`
           *,
-          teacher:profiles!courses_teacher_id_fkey (
+          claimed_teacher:profiles!courses_claimed_by_fkey (
             email
           )
         `)
@@ -654,7 +655,7 @@ const AdminDashboard = () => {
                       <TableRow key={course.id}>
                         <TableCell className="font-medium">{course.name}</TableCell>
                         <TableCell>{course.code || 'N/A'}</TableCell>
-                        <TableCell>{course.teacher?.email || 'Unassigned'}</TableCell>
+                        <TableCell>{course.claimed_teacher?.[0]?.email || 'Unassigned'}</TableCell>
                         <TableCell className="font-mono text-sm">{course.access_code}</TableCell>
                         <TableCell>
                           <Button
@@ -701,8 +702,8 @@ const AdminDashboard = () => {
                           <TableCell className="font-mono text-sm">{course.access_code}</TableCell>
                           <TableCell>{course.name}</TableCell>
                           <TableCell>
-                            <Badge variant={course.teacher_id ? 'default' : 'secondary'}>
-                              {course.teacher_id ? 'Claimed' : 'Available'}
+                            <Badge variant={course.claimed_by ? 'default' : 'secondary'}>
+                              {course.claimed_by ? 'Claimed' : 'Available'}
                             </Badge>
                           </TableCell>
                           <TableCell>
