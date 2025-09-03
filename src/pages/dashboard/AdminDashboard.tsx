@@ -97,13 +97,18 @@ const AdminDashboard = () => {
     try {
       setIsLoadingData(true);
       
+      console.log('Fetching admin data...');
+      
       // Fetch all profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Profiles error:', profilesError);
+        throw profilesError;
+      }
 
       // Fetch all courses
       const { data: coursesData, error: coursesError } = await supabase
@@ -111,7 +116,17 @@ const AdminDashboard = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (coursesError) throw coursesError;
+      if (coursesError) {
+        console.error('Courses error:', coursesError);
+        throw coursesError;
+      }
+
+      console.log('Fetched data:', { 
+        profiles: profilesData?.length, 
+        courses: coursesData?.length,
+        profilesData: profilesData?.slice(0, 2),
+        coursesData: coursesData?.slice(0, 2)
+      });
 
       setProfiles(profilesData || []);
       setCourses(coursesData || []);
