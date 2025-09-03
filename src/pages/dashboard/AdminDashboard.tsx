@@ -105,15 +105,10 @@ const AdminDashboard = () => {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all courses with teacher info
+      // Fetch all courses
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
-        .select(`
-          *,
-          claimed_teacher:profiles!courses_claimed_by_fkey (
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (coursesError) throw coursesError;
