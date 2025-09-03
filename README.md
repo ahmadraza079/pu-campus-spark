@@ -1,5 +1,5 @@
 # Punjab University - Learning Management System (LMS)
-
+This **readme file** is AI-Generated. 
 ## 📚 Project Overview
 
 This is a comprehensive Learning Management System (LMS) developed for the **Skill Development Centre** at the **University of the Punjab**. The system provides a modern, web-based platform for managing academic courses, student enrollments, teacher assignments, and administrative oversight.
@@ -111,7 +111,7 @@ This is a comprehensive Learning Management System (LMS) developed for the **Ski
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone <https://github.com/ahmadraza079/pu-campus-spark>
    cd punjab-university-lms
    ```
 
@@ -130,7 +130,7 @@ This is a comprehensive Learning Management System (LMS) developed for the **Ski
    ```
 
 5. **Access the application**
-   - Open your browser and navigate to `http://localhost:8080`
+   - Open your browser and navigate to `https://lovable.dev/projects/0c1fcfc5-c4a8-4743-874a-607eca411c4c`
    - The application will automatically redirect to the landing page
 
 ## 🔐 Authentication System
@@ -410,7 +410,7 @@ The system is designed to be maintainable, scalable, and user-friendly, making i
 
 ---
 
-**Developed by**: [Your Name]  
+**Developed by**: Ahmad Raza  
 **Institution**: University of the Punjab  
-**Course**: [Your Course Name]  
-**Submission Date**: [Current Date]
+**Course**: Artificial Intelligence Batch 10  
+**Submission Date**: 03/09/2025
