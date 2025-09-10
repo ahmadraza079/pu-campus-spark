@@ -300,10 +300,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      verify_admin_credentials: {
-        Args: { input_username: string }
-        Returns: boolean
-      }
     }
     Enums: {
       attendance_status: "Present" | "Absent"
