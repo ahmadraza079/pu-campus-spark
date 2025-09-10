@@ -123,53 +123,47 @@ const Login = () => {
     }
   };
 
-  // Admin login with username/password mapping
+  // Admin login with username/password mapping using secure approach
   const onAdminLogin = async (data: z.infer<typeof adminLoginSchema>) => {
     setIsLoading(true);
     try {
       console.log('Admin login attempt with username:', data.username);
       
-      // Find admin profile by username
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', data.username)
-        .eq('role', 'admin')
-        .maybeSingle();
+      // Use the secure admin login edge function
+      const { data: loginResult, error: loginError } = await supabase.functions
+        .invoke('admin-login', {
+          body: { 
+            username: data.username, 
+            password: data.password 
+          }
+        });
 
-      console.log('Profile lookup result:', { profile, profileError });
+      console.log('Admin login result:', { loginResult, loginError });
 
-      if (!profile) {
+      if (loginError || loginResult?.error) {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Admin user not found. Please check your username.",
+          description: loginResult?.error || loginError?.message || "Authentication failed.",
         });
-        return;
-      }
-
-      console.log('Attempting auth with email:', profile.email);
-      
-      // Sign in with the mapped email
-      const { error } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: data.password,
-      });
-
-      console.log('Auth result:', { error });
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: `Authentication error: ${error.message}`,
+      } else if (loginResult?.session) {
+        // Set the session in the client
+        await supabase.auth.setSession({
+          access_token: loginResult.session.access_token,
+          refresh_token: loginResult.session.refresh_token
         });
-      } else {
+        
         toast({
           title: "Welcome back!",
           description: "Successfully logged in as admin.",
         });
         navigate("/");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: "Invalid credentials.",
+        });
       }
     } catch (error) {
       console.error('Admin login error:', error);
