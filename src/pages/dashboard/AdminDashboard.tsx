@@ -97,9 +97,10 @@ const AdminDashboard = () => {
     try {
       setIsLoadingData(true);
       
-      console.log('Fetching admin data...');
+      console.log('Starting to fetch admin data...');
       
-      // Fetch all profiles
+      // Fetch all profiles first
+      console.log('Fetching profiles...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -107,10 +108,13 @@ const AdminDashboard = () => {
 
       if (profilesError) {
         console.error('Profiles error:', profilesError);
-        throw profilesError;
+        throw new Error(`Profiles error: ${profilesError.message}`);
       }
 
-      // Fetch all courses
+      console.log('Profiles fetched successfully:', profilesData?.length);
+
+      // Fetch all courses 
+      console.log('Fetching courses...');
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
         .select('*')
@@ -118,24 +122,22 @@ const AdminDashboard = () => {
 
       if (coursesError) {
         console.error('Courses error:', coursesError);
-        throw coursesError;
+        throw new Error(`Courses error: ${coursesError.message}`);
       }
 
-      console.log('Fetched data:', { 
-        profiles: profilesData?.length, 
-        courses: coursesData?.length,
-        profilesData: profilesData?.slice(0, 2),
-        coursesData: coursesData?.slice(0, 2)
-      });
+      console.log('Courses fetched successfully:', coursesData?.length);
 
+      console.log('Setting state with fetched data...');
       setProfiles(profilesData || []);
       setCourses(coursesData || []);
+      
+      console.log('Admin data fetch completed successfully');
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load dashboard data.",
+        description: error instanceof Error ? error.message : "Failed to load dashboard data.",
       });
     } finally {
       setIsLoadingData(false);
