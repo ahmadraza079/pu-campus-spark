@@ -3,19 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 const Index = () => {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, session, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user && !loading) {
-      // Redirect non-authenticated users to landing page
-      navigate("/landing");
-    } else if (user && userProfile) {
-      // Redirect authenticated users to their dashboard
-      const role = userProfile.role;
-      navigate(`/dashboard/${role}`);
+    if (!loading) {
+      if (!user) {
+        // Redirect non-authenticated users to landing page
+        navigate("/landing");
+      } else if (userProfile) {
+        // Redirect authenticated users to their dashboard
+        const role = userProfile.role;
+        navigate(`/dashboard/${role}`);
+      } else {
+        // Fallback: use JWT role to avoid redirect stall if profile read fails
+        const jwtRole = (session?.user?.user_metadata as any)?.role;
+        if (jwtRole) {
+          navigate(`/dashboard/${jwtRole}`);
+        }
+      }
     }
-  }, [user, userProfile, loading, navigate]);
+  }, [user, userProfile, session, loading, navigate]);
 
   if (loading) {
     return (
